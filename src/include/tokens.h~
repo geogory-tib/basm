@@ -1,0 +1,49 @@
+#ifndef TOKENS_H
+#define TOKENS_H
+#include "include/typedefs.h"
+#include "include/instructions.h"
+
+typedef struct
+{
+  char instruct_name[5];
+  byte opcodes[13]; // 13 addresing modes
+}instruction_table;
+
+typedef struct
+{
+  char *name;
+  u32 address;
+}label_t;
+
+typedef struct
+{
+  char name[5];
+  addrmode_t addr_mode;
+}instruct_t;
+
+typedef struct
+{
+  char name[5]
+  char *operands;
+}directive_t;
+
+typedef enum{
+  INSTRUCTION = 0,
+  LABEL,
+  DIRECTIVE,
+}tokentype_t;
+
+typedef union
+{
+  instruction_t instruct;
+  label_t label;
+  directive_t directive;
+}as_t;
+
+typedef struct
+{
+  as_t as;
+  tokentype_t type;
+}token_t
+
+#endif

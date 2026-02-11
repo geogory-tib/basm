@@ -1,0 +1,4 @@
+
+HelloWorld:
+	lda #123
+	sta $244
