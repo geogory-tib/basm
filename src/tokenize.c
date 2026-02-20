@@ -302,6 +302,17 @@ token_slice lex_tokens(lexer_t *lexer)
 		append_slice(&tokbuf, tok);
 		break;
 	  }
+	case ',':
+	  {
+		token_t tok = {
+		  &lexer->input[lexer->current_pos],
+		  1,
+		  COMMA,
+		  0x0
+		};
+		append_slice(&tokbuf, tok);
+		break;
+	  }
 	case 0:
 	  {
 		token_t tok ={
