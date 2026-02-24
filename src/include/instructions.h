@@ -1,6 +1,6 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
-
+#define ABS_BIAS_VALUE 4
 typedef enum {
   IMPLICIT = 0, // doesn't require operand 
   ACCUMLATOR, // works on the accumlator

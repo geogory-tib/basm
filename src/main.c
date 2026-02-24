@@ -8,7 +8,8 @@
 int main(int argc, char **argv)
 {
   if(argc <= 1 ){
-	EXIT_AND_FAIL("No input provided");
+	fprintf(stderr,"%s",BASM_HELP_MSG);
+	exit(EXIT_FAILURE);
   }
   size_t file_size;
   char *file_data = read_file(argv[1], &file_size);

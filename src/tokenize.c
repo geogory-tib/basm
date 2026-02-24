@@ -26,9 +26,11 @@ typedef enum{
 
 typedef struct
 {
+  char *input;
   size_t current_pos;
   size_t len;
-  char *input;
+  size_t current_line;
+  size_t current_col;
   char current_ch;
 }lexer_t;
 
@@ -38,6 +40,8 @@ typedef struct
   int str_len;
   toktype_t type;
   int value; //used for number constants in code
+  int col;
+  int row;
 }token_t;
 
 typedef struct
@@ -89,6 +93,7 @@ static inline char pull_char(lexer_t *lexer)
 	return 0;
   lexer->current_pos++;
   lexer->current_ch = lexer->input[lexer->current_pos];
+  lexer->current_col++;
   return lexer->input[lexer->current_pos];
 }
 
@@ -137,6 +142,8 @@ int check_if_valid_hex(char ch)
 static inline token_t lex_symbol(lexer_t *lexer)
 {
   token_t result_token = {0};
+  result_token.col = lexer->current_col;
+  result_token.row = lexer->current_line;
   char last_char = prev_char(*lexer);
   if(last_char == ' ' || last_char == '\t' || isgraph(last_char)){
 	if(check_if_identifer(*lexer)){
@@ -157,6 +164,8 @@ static inline token_t lex_symbol(lexer_t *lexer)
 static inline token_t parse_hex(lexer_t *lexer)
 {
   token_t tok = {0};
+  tok.col = lexer->current_col;
+  tok.row = lexer->current_line;
   char hex_value[5];
   int value_i = 0;
   for(;;){
@@ -166,8 +175,8 @@ static inline token_t parse_hex(lexer_t *lexer)
 	pull_char(lexer); //pull it off the lexer;
 	hex_value[value_i] = ch;
 	value_i++;
-	if (value_i >= 4){
-	  EXIT_AND_FAIL("HEX NUMBER TOO LARGE");
+	if (value_i > 4){
+	  EXIT_AND_FAIL("HEX NUMBER TOO LARGE",tok);
 	}
   }
   char *endptr;
@@ -181,6 +190,8 @@ static inline token_t parse_hex(lexer_t *lexer)
 static inline token_t lex_dec(lexer_t *lexer)
 {
   token_t tok = {0};
+  tok.col = lexer->current_col;
+  tok.row = lexer->current_line;
   tok.raw = &lexer->input[lexer->current_pos];
   char ch = lexer->input[lexer->current_pos];
   char number_buf[6]; //max str length for 16 bit number;
@@ -193,7 +204,7 @@ static inline token_t lex_dec(lexer_t *lexer)
 	  break;
 	ch = pull_char(lexer);
 	if(value_i >= 5){
-	  EXIT_AND_FAIL("DECIMAL VALUE LARGER THAN 16 BITS");
+	  EXIT_AND_FAIL("DECIMAL VALUE LARGER THAN 16 BITS",tok);
 	}
 	number_buf[value_i] = ch;
 	value_i++;
@@ -227,7 +238,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  OPEN_PAREN,
-		  0x2
+		  0x2,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -238,7 +251,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  CLOSED_PAREN,
-		  0x2
+		  0x2,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -249,7 +264,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  HASHTAG,
-		  0x0
+		  0x0,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -266,7 +283,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  MULT,
-		  0x1
+		  0x1,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -277,7 +296,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  DIV,
-		  0x1
+		  0x1,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -287,7 +308,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  PLUS,
-		  0x0
+		  0x0,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -297,7 +320,9 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  MINUS,
-		  0x0
+		  0x0,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
@@ -308,18 +333,26 @@ token_slice lex_tokens(lexer_t *lexer)
 		  &lexer->input[lexer->current_pos],
 		  1,
 		  COMMA,
-		  0x0
+		  0x0,
+		  lexer->current_col,
+		  lexer->current_line
 		};
 		append_slice(&tokbuf, tok);
 		break;
 	  }
+	case '\n':
+	  lexer->current_line++;
+	  lexer->current_col = 0;
+	  break;
 	case 0:
 	  {
 		token_t tok ={
 		NULL,
 		0,
  		TOK_EOF,
-		0x0
+		0x0,
+		0,
+		0
 	  };
 	  append_slice(&tokbuf, tok);
 	  goto exit;

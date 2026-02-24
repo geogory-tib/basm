@@ -16,20 +16,24 @@ typedef enum{
   CLOSED_PAREN,
   TOK_EOF
 }toktype_t;
+
 typedef struct
 {
+  char *input;
   size_t current_pos;
   size_t len;
-  char *input;
+  size_t current_line;
+  size_t current_col;
   char current_ch;
 }lexer_t;
-
 typedef struct
 {
   char *raw;
   int str_len;
   toktype_t type;
   int value; //used for number constants in code
+  int col;
+  int row;
 }token_t;
 
 typedef struct

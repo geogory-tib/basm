@@ -5,7 +5,7 @@ default:
 	$(CC) $(CCFLAGS)  src/*.c -o basm
 
 debug:
-	$(CC) $(CCFLAGS) -g -fsanitize=address src/*.c -o basm
+	$(CC) $(CCFLAGS) -g  src/*.c -o basm
 
 clean:
 	rm basm

@@ -21,7 +21,8 @@ char *read_file(const char*name,size_t *size)
 	  buf_size += 512;
 	  void *temp = realloc(ret_buf,(sizeof(char) * buf_size));
 	  if(!temp){
-		EXIT_AND_FAIL("realloc failure: Out of Memory");
+		fprintf(stderr,"Out Of Memory");
+		exit(EXIT_FAILURE);
 	  }
 	  ret_buf = temp;
 	}

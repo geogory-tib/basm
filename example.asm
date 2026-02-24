@@ -1,8 +1,7 @@
-	lsr (ZERO_PAGE,X)
-	lda #123
-	sta $244
+
+HelloWorld
 	lda ($00),Y
-	lsr
 	jmp HelloWorld
 	lda #1
+EndHelloWorld
 
