@@ -21,7 +21,9 @@ typedef enum{
   DIV,
   OPEN_PAREN,
   CLOSED_PAREN,
-  TOK_EOF
+  TOK_EOF,
+  TOK_LTHEN,
+  TOK_GTHEN
 }toktype_t;
 
 typedef struct
@@ -67,10 +69,9 @@ static int append_slice(token_slice *slice,token_t tok)
 
 lexer_t init_lexer(char *input,size_t len)
 {
-  lexer_t ret;
-  ret.current_pos = 0;
-  ret.len = len;
+  lexer_t ret = {0};
   ret.input = input;
+  ret.len = len;
   ret.current_ch = input[0];
   return ret;
 }
@@ -166,7 +167,7 @@ static inline token_t parse_hex(lexer_t *lexer)
   token_t tok = {0};
   tok.col = lexer->current_col;
   tok.row = lexer->current_line;
-  char hex_value[5];
+  char hex_value[12];
   int value_i = 0;
   for(;;){
 	char ch = peek_char(*lexer);
@@ -334,6 +335,32 @@ token_slice lex_tokens(lexer_t *lexer)
 		  1,
 		  COMMA,
 		  0x0,
+		  lexer->current_col,
+		  lexer->current_line
+		};
+		append_slice(&tokbuf, tok);
+		break;
+	  }
+	  case '>':
+	  {
+		token_t tok = {
+		  &lexer->input[lexer->current_pos],
+		  1,
+		  TOK_GTHEN,
+		  0x3,
+		  lexer->current_col,
+		  lexer->current_line
+		};
+		append_slice(&tokbuf, tok);
+		break;
+	  }
+	  case '<':
+	  {
+		token_t tok = {
+		  &lexer->input[lexer->current_pos],
+		  1,
+		  TOK_LTHEN,
+		  0x3,
 		  lexer->current_col,
 		  lexer->current_line
 		};

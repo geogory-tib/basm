@@ -1,22 +1,5 @@
-
-	JMP ($1234)
-
-	Lda ($20,X)
-	STA ($40,X)
-
-	LDA ($20),Y
-	STA ($40),Y
-
-	BEQ LABEL
-	BNE LABEL
-	BMI LABEL
-
-LABEL
-	RTS
-	LDA #$1234
-	JMP $44
-	LDA ($1234),Y
-	STA #$10
-	ASL #$10
-	LDX $1234,Y
-	JMP ($20,X)
+	org $803
+	lsr A
+	lda #1
+	sta $2020
+	sta ($FF),Y

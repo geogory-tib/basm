@@ -14,7 +14,9 @@ typedef enum{
   DIV,
   OPEN_PAREN,
   CLOSED_PAREN,
-  TOK_EOF
+  TOK_EOF,
+  TOK_LTHEN,
+  TOK_GTHEN
 }toktype_t;
 
 typedef struct

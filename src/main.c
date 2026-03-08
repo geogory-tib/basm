@@ -5,6 +5,7 @@
 #include "include/lexer.h"
 #include "include/io.h"
 #include "include/parser.h"
+#include "include/typedefs.h"
 int main(int argc, char **argv)
 {
   if(argc <= 1 ){
@@ -17,5 +18,11 @@ int main(int argc, char **argv)
   token_slice lexer_output = lex_tokens(&lexer);
   parser_t parser = init_parser(lexer_output);
   parse_tokens(&parser);
+  FILE *output_file = fopen(argv[2],"wb+");
+  if(output_file == NULL){
+	PANIC("Failed to open output file");
+  }
+  int code  = fwrite(parser.output.buf, sizeof(byte), parser.pc, output_file);
+  fclose(output_file);
   return 0;
 }
