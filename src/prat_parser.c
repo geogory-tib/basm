@@ -87,8 +87,8 @@ int pratt_parse(parser_t *parser,expr_t expr,int local){
 	}
 	current_token = pull_token(expr);
   }
-  current_pos = 0;
  exit:
+  current_pos = 0;
   return accumulator;
 }
 

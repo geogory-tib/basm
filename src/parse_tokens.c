@@ -396,6 +396,7 @@ static inline addrmode_t handle_indirect_addrmode(parser_t *parser,expr_t *expr)
 addrmode_t determine_addressing(parser_t *parser,token_t tok,int table_index,expr_t *expr)
 {
   if(table_index >= BRANCH_START && table_index <= BRANCH_END){
+	append_expression(expr, tok);
 	token_t temp_tok = pull_token(parser);
 	for(;;){
 	  temp_tok = peek_token(*parser);
@@ -487,6 +488,7 @@ static inline void build_label_table(parser_t *parser)
 	  append_label_slice(&parser->ltable, new_label);
 	}else if(token.type == MNEMONIC){
 	  parsed_mnemonic mnemonic = {0};
+	  mnemonic.start_tok = token;
 	  volatile int table_index = check_if_valid_instruction(token);
 	  if(table_index >= 0){
 		token = pull_token(parser);
@@ -557,8 +559,24 @@ void parse_and_output(parser_t *parser){
 	}else{
 	  byte byte_code_buf[3];
 	  byte byte_code_len = addrmode_size[mnemonic.addr_mode];
+	  if(ins_table[mnemonic.table_indx].op_codes[mnemonic.addr_mode] == 0x00){
+		EXIT_AND_FAIL("Invaild addressing mode for instruction", mnemonic.start_tok);
+	  }
 	  if(mnemonic.addr_mode == IMPLICIT || mnemonic.addr_mode == ACCUMLATOR){
 		byte_code_buf[0] = ins_table[mnemonic.table_indx].op_codes[mnemonic.addr_mode];
+		append_byte_slice(parser, byte_code_buf, byte_code_len);
+		continue;
+	  }
+	  if(mnemonic.addr_mode == RELATIVE){
+		byte_code_len = addrmode_size[mnemonic.addr_mode];
+		int val = pratt_parse(parser, mnemonic.expr, 0);
+		val -= (parser->offset + parser->pc);
+		if(val > 127 || val < -127){
+		  EXIT_AND_FAIL("Offset larger than 127 bytes", mnemonic.start_tok);
+		}
+		i8 bval = (i8)val;
+		byte_code_buf[0] = ins_table[mnemonic.table_indx].op_codes[mnemonic.addr_mode];
+		byte_code_buf[1] = bval;
 		append_byte_slice(parser, byte_code_buf, byte_code_len);
 		continue;
 	  }

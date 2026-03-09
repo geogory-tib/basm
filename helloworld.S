@@ -1,3 +1,4 @@
+	org $803
 helloworld
 	lda #$40
 	jsr $FDED
@@ -7,5 +8,6 @@ helloworld
 	jsr $FDED
 	lda #$43
 	jsr $FDED
+end_loop
 	lda #0
-	beq helloworld
+	beq end_loop
