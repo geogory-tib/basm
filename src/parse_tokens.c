@@ -570,7 +570,7 @@ void parse_and_output(parser_t *parser){
 	  if(mnemonic.addr_mode == RELATIVE){
 		byte_code_len = addrmode_size[mnemonic.addr_mode];
 		int val = pratt_parse(parser, mnemonic.expr, 0);
-		val -= (parser->offset + parser->pc);
+		val -= (parser->offset + parser->pc) + byte_code_len;
 		if(val > 127 || val < -127){
 		  EXIT_AND_FAIL("Offset larger than 127 bytes", mnemonic.start_tok);
 		}
