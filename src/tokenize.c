@@ -23,7 +23,8 @@ typedef enum{
   CLOSED_PAREN,
   TOK_EOF,
   TOK_LTHEN,
-  TOK_GTHEN
+  TOK_GTHEN,
+  TOK_AMBSAN
 }toktype_t;
 
 typedef struct
@@ -367,6 +368,19 @@ token_slice lex_tokens(lexer_t *lexer)
 		append_slice(&tokbuf, tok);
 		break;
 	  }
+	  case '&':
+	  {
+		token_t tok = {
+		  &lexer->input[lexer->current_pos],
+		  1,
+		  TOK_AMBSAN,
+		  0x0,
+		  lexer->current_col,
+		  lexer->current_line
+		};
+		append_slice(&tokbuf, tok);
+		break;
+	  }
 	case '\n':
 	  lexer->current_line++;
 	  lexer->current_col = 0;
@@ -377,7 +391,7 @@ token_slice lex_tokens(lexer_t *lexer)
 		NULL,
 		0,
  		TOK_EOF,
-		0x0,
+		-1,
 		0,
 		0
 	  };

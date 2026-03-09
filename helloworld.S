@@ -1,12 +1,12 @@
 	org $803
 helloworld
-	lda #$40
+	lda #$40 * 2 + 1 * 4
 	jsr $FDED
-	lda #$41
+	lda #$41 * 2 + 4 / 2 
 	jsr $FDED
-	lda #$42
+	lda #$42 + 1 * 4 + 2
 	jsr $FDED
-	lda #$43
+	lda #$43 + 2 * 2 / 2
 	jsr $FDED
 end_loop
 	lda #0

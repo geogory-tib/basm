@@ -16,7 +16,8 @@ typedef enum{
   CLOSED_PAREN,
   TOK_EOF,
   TOK_LTHEN,
-  TOK_GTHEN
+  TOK_GTHEN,
+  TOK_AMBSAN
 }toktype_t;
 
 typedef struct
