@@ -420,6 +420,11 @@ addrmode_t determine_addressing(parser_t *parser,token_t tok,int table_index,exp
 	  break;
 	  
 	}
+  case TOK_AMBSAN:
+	{
+	  return handle_memory_addressing(parser, ABS_BIAS_VALUE, expr);
+	  break;
+	}
   case DEC_NUMBER:
 	{
 	  append_expression(expr, tok);

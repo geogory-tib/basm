@@ -101,25 +101,49 @@ int apply_op(token_t operation,int left,int right){
   }
   return val;
 }
-/* static inline token_t prev_token(expr_t parser) */
-/* { */
-/*   if(current_pos - 1 < 0) */
-/* 	return (token_t){0x0,0,TOK_EOF,0x0,0,0}; */
-/*   return parser.buf[current_pos - 1]; */
-/* } */
+
+static inline int apply_uniary(parser_t *parser,token_t op,expr_t expr){
+  int ret = 0;;
+  token_t next_type = peek_token(parser,expr);
+  if(next_type.type != DEC_NUMBER && next_type.type != HEX_NUMBER && next_type.type != LABEL && next_type.type != TOK_AMBSAN){
+	EXIT_AND_FAIL("Unexpected token", next_type);
+  }
+  pull_token(parser, expr);
+  ret = extract_value(current_token, parser);
+  switch(op.type){
+  case TOK_GTHEN:
+	{
+	  ret &= 0xFF00;
+	  ret = ret >> 8;
+	  break;
+	}
+  case TOK_LTHEN:
+	{
+	  ret &= 0x00FF;
+	  break;
+	}
+  default:
+	EXIT_AND_FAIL("Unknown Uniary Operator", op);
+  }
+  return ret;
+}
+
 int pratt_parse(parser_t *parser,expr_t expr,int weight){
   int left = 0;
   int right = 0;
   token_t op;
   pull_token(parser, expr);
-  left = extract_value(current_token, parser);
+  if(get_precedence(current_token) == 3){
+	left = apply_uniary(parser, current_token, expr);
+  }else{
+	left = extract_value(current_token, parser);
+  }
   token_t next_tok = peek_token(parser, expr);
   while(get_precedence(peek_token(parser, expr)) > weight){
 	pull_token(parser,expr);
 	op = current_token;
 	right = pratt_parse(parser, expr, get_precedence(op));
 	left = apply_op(op, left, right);
-	
   }
   if(peek_token(parser, expr).type == TOK_EOF && weight == 0)
 	parser->current_pos = 0;

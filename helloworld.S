@@ -9,5 +9,7 @@ helloworld
 	lda #$43 + 2 * 2 / 2
 	jsr $FDED
 end_loop
+	lda #2 + <6942
+	lda #1 + >$6942
 	lda #0
-	beq end_loop
+	beq end_loop	

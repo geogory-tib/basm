@@ -5,7 +5,7 @@ default:
 	$(CC) $(CCFLAGS)  src/*.c -o basm
 
 debug:
-	$(CC) $(CCFLAGS) -g  -fsanitize=address -fno-omit-frame-pointer  -static-libasan src/*.c -o basm
+	$(CC) $(CCFLAGS) -g  -fsanitize=address -fno-omit-frame-pointer -static-libasan -DDEBUG src/*.c -o basm
 
 
 clean:
