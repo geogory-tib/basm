@@ -1,19 +1,60 @@
-# BASM -- The BAD assembler for the 6502 CPU
-### Written By Samuel .A Johnson   
-	This is a very rudimentary assembler that works somewhat okay. It's design is probably terrible, but It's my first time    
-	writing anything that does any code generation. I am working on adding a macro pre processor (much like C's) to the assembler   
-	since currently there is no support currently for macros,constants or even comments (yeah. I know I'm getting to work on it)   
-	This assembler has slightly different syntax from traditional 6502 assemblers to refer to the current program counter like for    
-	instance in this code   
-	```   
-	beq * + 4 ; like in DASM or many other 6502 assemblers   
-	```   
-	is done like this in BASM   
-	```
-	beq & + 4 //did this because I thought it made more sense because I program mainly in c   
-	```   
-	there is a file named SYNTAX_EXAMPLE.S that provides you a visual overview of some of the semantics of the assembler.   
-	Currently it will not assemble because I do not have any support for comments or macros, but I am going to use it as a    
-	template for what needs to be implemented.    
-	Please feel free to message me for any tips,suggestions or improvements. Please have a wonderful day and God bless.
-	
+# BASM — The BAD Assembler for the 6502 CPU
+### Written by Samuel A. Johnson
+
+BASM is a very rudimentary assembler for the 6502 CPU. It works *somewhat okay*, but the design is probably terrible. This is my first time writing anything that performs code generation.
+
+I am currently working on adding a **macro preprocessor** (similar to C’s) to the assembler. At the moment there is **no support for**:
+
+- Macros
+- Constants
+- Comments
+
+(Yeah… I know. I'm working on it.)
+
+---
+
+## Syntax Differences
+
+BASM uses slightly different syntax than traditional 6502 assemblers for referencing the **current program counter**.
+
+For example, in assemblers like **DASM**, you might write:
+
+```
+beq * + 4
+```
+
+In **BASM**, the equivalent syntax is:
+
+```
+beq & + 4
+```
+
+I chose `&` because it felt more natural coming from a **C programming background**.
+
+---
+
+## Syntax Example File
+
+There is a file included in the repository called:
+
+```
+SYNTAX_EXAMPLE.S
+```
+
+This file provides a **visual overview of some BASM semantics**.
+
+Currently, it **will not assemble** because support for comments and macros has not yet been implemented. It is intended to serve as a **template and development guide** for features that still need to be added.
+
+---
+
+## Feedback
+
+Please feel free to reach out with:
+
+- Tips
+- Suggestions
+- Improvements
+
+Thanks for taking a look!
+
+Have a wonderful day, and **God bless**.
