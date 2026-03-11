@@ -13,7 +13,7 @@
  */
 static token_t current_token = {0};
 
-static int precedence_table[TOK_AMBSAN ] = {
+static int precedence_table[TOK_AMBSAN + 1] = {
   -2,
   -2,
   0,

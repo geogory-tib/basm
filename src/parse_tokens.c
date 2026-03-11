@@ -422,6 +422,7 @@ addrmode_t determine_addressing(parser_t *parser,token_t tok,int table_index,exp
 	}
   case TOK_AMBSAN:
 	{
+	  append_expression(expr, tok);
 	  return handle_memory_addressing(parser, ABS_BIAS_VALUE, expr);
 	  break;
 	}
