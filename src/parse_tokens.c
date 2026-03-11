@@ -413,8 +413,8 @@ addrmode_t determine_addressing(parser_t *parser,token_t tok,int table_index,exp
   case HEX_NUMBER:
 	{
 	  append_expression(expr, tok);
-	  if(tok.str_len == 2){
-		return handle_memory_addressing(parser, ABS_BIAS_VALUE,expr);
+	  if(tok.str_len <= 2){
+		return handle_memory_addressing(parser,0,expr);
 	  }
 	  return handle_memory_addressing(parser, ABS_BIAS_VALUE,expr);
 	  break;

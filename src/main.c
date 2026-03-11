@@ -8,7 +8,7 @@
 #include "include/typedefs.h"
 int main(int argc, char **argv)
 {
-  if(argc <= 1 ){
+  if(argc <= 2 ){
 	fprintf(stderr,"%s",BASM_HELP_MSG);
 	exit(EXIT_FAILURE);
   }
