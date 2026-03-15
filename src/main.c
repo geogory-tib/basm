@@ -6,6 +6,7 @@
 #include "include/io.h"
 #include "include/parser.h"
 #include "include/typedefs.h"
+#include "include/pproc.h"
 int main(int argc, char **argv)
 {
   if(argc <= 2 ){
@@ -14,6 +15,13 @@ int main(int argc, char **argv)
   }
   size_t file_size;
   char *file_data = read_file(argv[1], &file_size);
+
+  preprocess(&file_data, &file_size);
+#ifdef DEBUG
+  FILE *test_file = fopen("macrotest.S","wb+");
+  fwrite(file_data,sizeof(char), file_size, test_file);
+  fclose(test_file);
+#endif
   lexer_t lexer = init_lexer(file_data, file_size);
   token_slice lexer_output = lex_tokens(&lexer);
   parser_t parser = init_parser(lexer_output);
