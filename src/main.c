@@ -16,7 +16,7 @@ int main(int argc, char **argv)
   size_t file_size;
   char *file_data = read_file(argv[1], &file_size);
 
-  preprocess(&file_data, &file_size);
+  preprocess(&file_data, &file_size,argv[1]);
 #ifdef DEBUG
   FILE *test_file = fopen("macrotest.S","wb+");
   fwrite(file_data,sizeof(char), file_size, test_file);

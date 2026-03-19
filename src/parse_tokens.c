@@ -232,6 +232,8 @@ token_t peek_token(parser_t parser)
 }
 int check_if_valid_instruction(token_t tok)
 {
+  if(tok.str_len != strlen(ins_table[0].name))
+	return -1;
   for(int i = 0; i < INSTRUCTION_TABLE_SIZE;i++){
 	if(!strncasecmp(tok.raw, ins_table[i].name,tok.str_len))
 	  return i;
@@ -241,6 +243,8 @@ int check_if_valid_instruction(token_t tok)
 int check_if_valid_directive(token_t tok)
 {
   for(int i = 0; i < DIRECTIVE_TABLE_SIZE;i++){
+	if(tok.str_len != strlen(dir_table[i].name))
+	  continue;
 	if(!strncasecmp(tok.raw, dir_table[i].name,tok.str_len))
 	  return i;
   }

@@ -11,6 +11,10 @@ char *read_file(const char*name,size_t *size)
 {
   char buf[512];
   FILE *input_file = fopen(name,"r");
+  if(input_file == NULL){
+	fprintf(stderr,"File %s does not exist. Exiting",name);
+	exit(EXIT_FAILURE);
+  }
   char *ret_buf;
   ret_buf = calloc(1024,sizeof(char));
   size_t buf_size = 1024;

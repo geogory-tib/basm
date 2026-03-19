@@ -406,3 +406,17 @@ token_slice lex_tokens(lexer_t *lexer)
   return tokbuf;
 }
 
+
+
+//this input somehow did not error out?
+//need to figure this out 2
+
+/*     org $803 */
+	
+/* hellopeople */
+/* 	lda #1  */
+/* 	lda bytesec */
+/* 	jmp hellopeople		 */
+/* bytesec */
+/* 	byte 20 */
+/* 	"testinclude.S" */
