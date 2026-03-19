@@ -3,13 +3,9 @@
 
 BASM is a very rudimentary assembler for the 6502 CPU. It works *somewhat okay*, but the design is probably terrible. This is my first time writing anything that performs code generation.
 
-I am currently working on adding a **macro preprocessor** (similar to C’s) to the assembler. At the moment there is **no support for**:
-
+I am currently working on finishing the **macro preprocessor** to the assembler. At the moment there is **no support for**:
 - Macros
-- Constants
-- Comments
-
-(Yeah… I know. I'm working on it.)
+(It shouldn't be to hard to finish it)
 
 ---
 
@@ -43,7 +39,8 @@ SYNTAX_EXAMPLE.S
 
 This file provides a **visual overview of some BASM semantics**.
 
-Currently, it **will not assemble** because support for comments and macros has not yet been implemented. It is intended to serve as a **template and development guide** for features that still need to be added.
+As of now it should compile but the macro example is commented out, due to macros being in the works.   
+I am currently working on creating proper documentation for the assembler.
 
 ---
 
