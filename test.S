@@ -1,8 +1,5 @@
 	org $803
-hellopeople
-	lda #1 
-	lda bytesec
-	jmp hellopeople		
-bytesec
-	byte 20
-	!include "testinclude.S"
+Lable123
+	lda #1 + 2 + 3
+	lda #0 + 69 * 2 
+	jmp &

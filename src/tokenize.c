@@ -119,7 +119,7 @@ static inline void pull_str(lexer_t *lexer,token_t * tok)
   char ch = peek_char(*lexer);
   char *str = &lexer->input[lexer->current_pos];
   tok->str_len++;
-  while(isalpha(ch) || ch == '_'){
+  while(isalnum(ch) || ch == '_'){
 	ch = pull_char(lexer);
 	tok->str_len++;
 	ch = peek_char(*lexer);

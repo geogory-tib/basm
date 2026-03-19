@@ -1,23 +1,21 @@
-/*
-	Currently I do not have support for comments.
-	But like I mentioned in the readme this will
-	be a template for how I want this assembler to
-	look like when finished.
-*/
+!# Comments are defined by a !#
+!# the '!' is used to invoke the pre processor for anything
+!# for instance using a !define constant like the below example would need to be invoked like this !example_zp_var 	
+	
+!define example_zp_var $55
 
-#define example_zp_var $55
-/*
-	Macros will be called like functions
-	I plan on macros also generating unique labels
-	based on the macro name and the number of times
-	it's been called if it can be implemented.
-*/
-#defmac example_macro(x,y)
-	lda #1
-	sta example_zp_var
-#endmac	
+!#	Macros will be called like functions
+!#	I plan on macros also generating unique labels
+!#	based on the macro name and the number of times
+!#	it's been called if it can be implemented.
+
+!# macros are planned to be implemented like this
+!#!defmac example_macro(x,y)
+!#	lda #1
+!#	sta !example_zp_var
+!#!endmac	
 	org $803
-/*forgot to mention that numbers aren't allowed in labels yet whoops*/
+!#forgot to mention that numbers aren't allowed in labels yet whoops
 Test6502
 	lda #$01
 	ldx #$02
@@ -133,7 +131,7 @@ Test6502
 	eor ($56,X)
 	cmp ($57,X)
 
-	lda ($60),Y
+	lda ( !example_zp_var ),Y
 	sta ($61),Y
 	adc ($62),Y
 	sbc ($63),Y
@@ -141,7 +139,7 @@ Test6502
 	ora ($65),Y
 	eor ($66),Y
 	cmp ($67),Y
-	/* All Accumlator Addressed instructions require an A before using*/
+	!#All Accumlator Addressed instructions require an A before using
 	asl A
 	lsr A
 	rol A
@@ -166,7 +164,7 @@ Test6502
 	plp
 	nop
 
-	beq & + 2 /* like I mentioned earlier & is for the current PC*/
+	beq & + 2  !# like I mentioned earlier & is for the current PC
 	beq BranchTarget
 	bne BranchTarget
 	bcs BranchTarget
@@ -184,8 +182,7 @@ SubRoutine
 
 EndTest6502
 
-/*
-	Once I finish this assembler I plan on creating some proper
-	documentation on it. For now this probably will suffice for
-	most people if anyone actually uses this for anything.
-*/
+	!#Once I finish this assembler I plan on creating some proper
+	!#documentation on it. For now this probably will suffice for
+	!#most people if anyone actually uses this for anything.
+

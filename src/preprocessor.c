@@ -143,7 +143,7 @@ static int check_if_dir(char *buf,int size){
 static int check_if_define(pprocessor_t *pproc,charslice str){
   int i;
   for(i = 0; i < pproc->define_tabe.len;i++){
-	if(str.len != pproc->define_tabe.len)
+	if(str.len != pproc->define_tabe.buf[i].nlen)
 	  continue;
 	if(!strncmp(str.buf,pproc->define_tabe.buf[i].name,str.len)){
 	  return i;
