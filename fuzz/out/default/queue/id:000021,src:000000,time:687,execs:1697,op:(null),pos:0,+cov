@@ -1,0 +1,188 @@
+!# Comments are defined by a !#
+!# the '!' is used to invoke the pre processor for anything
+!# for instance using a !define constant like the below example would need to be invoked like this !example_zp_var 	
+	
+!define example_zp_var $55
+
+A#	Macros will be called like functions
+!#	I plan on macros also generating unique labels
+!#	based on the macro name and the number of times
+!#	it's been called if it can be implemented.
+
+!# macros are planned to be implemented like this
+!#!defmac example_macro(x,y)
+!#	lda #1
+!#	sta !example_zp_var
+!#!endmac	
+	org $803
+!#forgot to mention that numbers aren't allowed in labels yet whoops
+Test6502
+	lda #$01
+	ldx #$02
+	ldy #$03
+	adc #$04
+	sbc #$05
+	and #$06
+	ora #$07
+	eor #$08
+	cmp #$09
+	cpx #$0A
+	cpy #$0B
+
+	lda $10
+	ldx $11
+	ldy $12
+	sta $13
+	stx $14
+	sty $15
+	adc $16
+	sbc $17
+	and $18
+	ora $19
+	eor $1A
+	cmp $1B
+	cpx $1C
+	cpy $1D
+	dec $1E
+	inc $1F
+	asl $20
+	lsr $21
+	rol $22
+	ror $23
+	bit $24
+
+	lda $30,X
+	ldy $31,X
+	sta $32,X
+	adc $33,X
+	sbc $34,X
+	and $35,X
+	ora $36,X
+	eor $37,X
+	cmp $38,X
+	dec $39,X
+	inc $3A,X
+	asl $3B,X
+	lsr $3C,X
+	rol $3D,X
+	ror $3E,X
+
+	ldx $40,Y
+	stx $41,Y
+
+	lda $1234
+	ldx $1235
+	ldy $1236
+	sta $1237
+	stx $1238
+	sty $1239
+	adc $123A
+	sbc $123B
+	and $123C
+	ora $123D
+	eor $123E
+	cmp $123F
+	cpx $1240
+	cpy $1241
+	dec $1242
+	inc $1243
+	asl $1244
+	lsr $1245
+	rol $1246
+	ror $1247
+	bit $1248
+	jmp $1249
+	jsr SubRoutine
+
+	lda $2000,X
+	ldy $2001,X
+	sta $2002,X
+	adc $2003,X
+	sbc $2004,X
+	and $2005,X
+	ora $2006,X
+	eor $2007,X
+	cmp $2008,X
+	dec $2009,X
+	inc $200A,X
+	asl $200B,X
+	lsr $200C,X
+	rol $200D,X
+	ror $200E,X
+
+	lda $2100,Y
+	ldx $2101,Y
+	sta $2102,Y
+	adc $2103,Y
+	sbc $2104,Y
+	and $2105,Y
+	ora $2106,Y
+	eor $2107,Y
+	cmp $2108,Y
+
+	jmp ($3000)
+
+	lda ($50,X)
+	sta ($51,X)
+	adc ($52,X)
+	sbc ($53,X)
+	and ($54,X)
+	ora ($55,X)
+	eor ($56,X)
+	cmp ($57,X)
+
+	lda ( !example_zp_var ),Y
+	sta ($61),Y
+	adc ($62),Y
+	sbc ($63),Y
+	and ($64),Y
+	ora ($65),Y
+	eor ($66),Y
+	cmp ($67),Y
+	!#All Accumlator Addressed instructions require an A before using
+	asl A
+	lsr A
+	rol A
+	ror A
+
+	clc
+	sec
+	cli
+	sei
+	cld
+	sed
+	clv
+	tax
+	txa
+	tay
+	tya
+	tsx
+	txs
+	pha
+	pla
+	php
+	plp
+	nop
+
+	beq & + 2  !# like I mentioned earlier & is for the current PC
+	beq BranchTarget
+	bne BranchTarget
+	bcs BranchTarget
+	bcc BranchTarget
+	bmi BranchTarget
+	bpl BranchTarget
+	bvs BranchTarget
+	bvc BranchTarget
+
+BranchTarget
+	nop
+
+SubRoutine
+	rts
+
+EndTest6502
+
+	!#Once I finish this assembler I plan on creating some proper
+	!#documentation on it. For now this probably will suffice for
+	!#most people if anyone actually uses this for anything.
+

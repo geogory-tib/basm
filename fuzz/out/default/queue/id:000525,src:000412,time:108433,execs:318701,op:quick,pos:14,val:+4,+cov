@@ -1,0 +1,2 @@
+a	lsr $12+ 2  # like I metioned 45
+	rol $

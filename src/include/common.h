@@ -5,11 +5,11 @@
 // Common Macros Shared accrossed project
 #ifndef DEBUG
 #define EXIT_AND_FAIL(msg,tok)						\
-  fprintf(stderr,"(%d:%d) %s : %.*s\n",(tok).row + 1,(tok).col+1,msg,(tok).str_len,(tok).raw); \
+  fprintf(stderr,"(%d:%d) %s : '%.*s'\n",(tok).row + 1,(tok).col+1,msg,(tok).str_len,(tok).raw); \
   exit(EXIT_FAILURE);
 #else
 #define EXIT_AND_FAIL(msg, tok) \
-  fprintf(stderr,"(%d:%d) %s : %.*s @ %s:%d\n",(tok).row + 1,(tok).col+1,msg,(tok).str_len,(tok).raw,__FILE__,__LINE__); \
+  fprintf(stderr,"(%d:%d) %s : '%.*s' @ %s:%d\n",(tok).row + 1,(tok).col+1,msg,(tok).str_len,(tok).raw,__FILE__,__LINE__); \
   exit(EXIT_FAILURE);
 #endif
 #define PANIC(msg) \

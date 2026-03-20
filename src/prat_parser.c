@@ -87,6 +87,9 @@ int apply_op(token_t operation,int left,int right){
 	val = left * right;
 	break;
   case DIV:
+	if(right == 0){
+	  EXIT_AND_FAIL("Divide by zero", operation);
+	}
 	val = left / right;
 	break;
   case MINUS:
