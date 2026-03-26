@@ -2,32 +2,28 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 #include "include/typedefs.h"
 #include "include/common.h"
 #include "include/io.h"
-#define TABLE_LEN 2
+#define TABLE_LEN 4
 enum dt_index{
   INCLUDE_IND = 0,
-  DEFINE_IND
+  DEFINE_IND,
+  DEFMAC_IND,
+  ENDMAC_IND
 };
 
   												
 static char directive_table[][10] =
   {
 	"include",
-	"define"
+	"define",
+	"defmac",
+	"endmac"
   };
 
-/* typedef struct { */
-/*   char *start; */
-/*   size_t size; */
-/* }macro_t; */
 
-/* typedef struct{ */
-/*   macro_t *buf; */
-/*   size_t len; */
-/*   size_t cap; */
-/* }macro_slice; */
 typedef struct{
   char *name;
   size_t nlen;
@@ -81,12 +77,84 @@ static int append_char_slice(charslice *slice,char *input,size_t isize)
   slice->len += isize;
   return 0;
 }
+
+typedef struct{
+  charslice *buf;
+  size_t cap;
+  size_t len;
+}charslice_slice;
+
+static int append_charslice_slice(charslice_slice *slice,charslice str)
+{
+  if (slice->len == slice->cap){
+	void *tmp = realloc(slice->buf,(sizeof(charslice) * ((slice->cap + 1) * 2)));
+	if(!tmp)
+	  return -1;
+	slice->buf = tmp;
+	slice->cap += 1;
+	slice->cap *= 2;
+  }
+  slice->buf[slice->len] = str;
+  slice->len++;
+  return 0;
+}
+
+
+typedef struct{
+  charslice body;
+  charslice name;
+  size_t arg_no;
+}macro_t;
+// because macros are a string view I am using the CAP as the current POS
+static char pull_macro_char(macro_t *macro)
+{
+  char ret;
+  if(macro->body.cap < macro->body.len){
+	ret = macro->body.buf[macro->body.cap];
+	macro->body.cap++;
+  }else{
+	ret = 0;
+  }
+  return ret;
+}
+static char peek_macro_char(macro_t *macro)
+{
+  char ret;
+  if(macro->body.cap < macro->body.len){
+	ret = macro->body.buf[macro->body.cap];
+  }else{
+	ret = 0;
+  }
+  return ret;
+}
+
+typedef struct{
+  macro_t *buf;
+  size_t cap;
+  size_t len;
+}macro_slice;
+
+static int append_macro_slice(macro_slice *slice,macro_t macro)
+{
+  if (slice->len == slice->cap){
+	void *tmp = realloc(slice->buf,(sizeof(macro_t) * (slice->cap + 25)));
+	if(!tmp)
+	  return -1;
+	slice->buf = tmp;
+	slice->cap += 25;
+  }
+  slice->buf[slice->len] = macro;
+  slice->len++;
+  return 0;
+}
+
 typedef struct{
   char *input;
   size_t input_len;
   char *file_name;
   charslice output;
   define_slice define_tabe;
+  macro_slice macro_table;
   chunk_t current_chunk;
   size_t current_pos;
   size_t current_line;
@@ -152,13 +220,57 @@ static int check_if_define(pprocessor_t *pproc,charslice str){
   return -1;
 }
 
+static int check_if_macro(pprocessor_t *pproc,charslice str){
+  int i;
+  for(i = 0; i < pproc->macro_table.len;i++){
+	if(str.len != pproc->macro_table.buf[i].name.len)
+	  continue;
+	if(!strncmp(str.buf,pproc->macro_table.buf[i].name.buf,str.len)){
+	  return i;
+	}
+  }
+  return -1;
+}
 charslice pull_space_delim_str(pprocessor_t *pproc)
 {
   charslice ret = {0};
   ret.buf = &pproc->input[pproc->current_pos];
   ret.cap = 0;
-  for(char ch  = pull_token(pproc);!iscntrl(ch) && !isspace(ch); ch = pull_token(pproc)){
+  for(char ch  = pull_token(pproc);!iscntrl(ch) && !isspace(ch) && ch != '('; ch = pull_token(pproc)){
 	ret.len++;
+  }
+  return ret;
+}
+charslice macro_pull_space_delim_str(macro_t *macro)
+{
+  charslice ret = {0};
+  ret.buf = &macro->body.buf[macro->body.cap];
+  ret.cap = 0;
+  for(char ch = pull_macro_char(macro);!iscntrl(ch) && !isspace(ch) && ch != ')'; ch = pull_macro_char(macro)){
+	ret.len++;
+  }
+  return ret;
+}
+
+charslice pull_maco_name(pprocessor_t *pproc)
+{
+  charslice ret = {0};
+  ret.buf = &pproc->input[pproc->current_pos];
+  ret.cap = 0;
+  for(char ch  = pull_token(pproc);ch != '(';ch = pull_token(pproc)){
+	ret.len++;
+  }
+  return ret;
+}
+charslice pull_macro_args(pprocessor_t *pproc)
+{
+  charslice ret = {0};
+  ret.buf = &pproc->input[pproc->current_pos];
+  ret.cap = 0;
+  for(char ch  = pull_token(pproc);;ch = pull_token(pproc)){
+	ret.len++;
+	if(ch == ')')
+	  break;
   }
   return ret;
 }
@@ -174,8 +286,46 @@ void build_define(pprocessor_t *pproc)
   append_define_slice(&pproc->define_tabe, define);
 }
 
-void map_and_build_tokens(pprocessor_t *pproc);
+int decstr_to_int(charslice num){
+  size_t ret;
+  int accum = 0;
+  num.cap = num.len;
+  for(int i = 0; i < num.cap; i++){
+	char num_ch = num.buf[i];
+	int number = num_ch - 48;
+	for(int place = (num.cap - 1) - i;i != 0; i--){
+	  number *= 10;
+	  num.cap--;
+	}
+	accum += number;
+  }
+  return accum;
+}
+void build_macro(pprocessor_t *pproc){
+  macro_t new_macro = {0};
+  new_macro.name = pull_space_delim_str(pproc);
+  charslice number_of_args = pull_space_delim_str(pproc);
+  new_macro.arg_no = decstr_to_int(number_of_args);
+  size_t start_pos = pproc->current_pos;
+  new_macro.body.buf = &pproc->input[pproc->current_pos];
+  while(1){
+	char ch = pull_token(pproc);
+	if(ch == '!'){
+	  size_t prev_pos = pproc->current_pos - 1;
+	  charslice call_name = pull_space_delim_str(pproc);
+	  if(call_name.len == strlen(directive_table[ENDMAC_IND])){
+		if(!strncmp(call_name.buf, directive_table[ENDMAC_IND], call_name.len)){
+		  new_macro.body.len = prev_pos - start_pos;
+		  append_macro_slice(&pproc->macro_table, new_macro);
+		  return;
+		}
+	  }
+	}
+  }
+}
 
+void map_and_build_tokens(pprocessor_t *pproc);
+ 
 void handle_include(pprocessor_t *pproc)
 {
   charslice qouted_file_name = pull_space_delim_str(pproc);
@@ -215,7 +365,87 @@ void handle_include(pprocessor_t *pproc)
   pproc->current_pos = prev_pos;
   pproc->file_name = prev_filename;
 }
-
+charslice_slice extract_macro_args(charslice paren_args)
+{
+  charslice args = {.buf = paren_args.buf, .cap = 0, args.len = 0};
+  charslice_slice ret = {0};
+  for(int i = 0; i < paren_args.len && paren_args.buf[i] != ')';i++){
+	if(paren_args.buf[i] == ','){
+	  append_charslice_slice(&ret, args);
+	  i++;
+	  args.buf = &paren_args.buf[i];
+	  args.len = 0;
+	}
+	args.len++;
+  }
+  append_charslice_slice(&ret, args);
+  return ret;
+}
+//invocations within macros have to be handled seprately
+ void handle_macro(pprocessor_t *pproc,size_t table_index);
+ void handle_invocation_in_macro(pprocessor_t *pproc,macro_t *current_macro)
+ {
+  char check_if_comment = peek_macro_char(current_macro);
+  if(check_if_comment == '#'){
+	check_if_comment = pull_macro_char(current_macro);
+	while(check_if_comment != '\n'){
+	  check_if_comment = pull_macro_char(current_macro);
+	  check_if_comment = peek_macro_char(current_macro);
+	}
+	goto end;
+  }
+  charslice call_name = macro_pull_space_delim_str(current_macro); 
+  int table_index = check_if_define(pproc, call_name);
+  if(table_index != -1){
+	append_char_slice(&pproc->output, pproc->define_tabe.buf[table_index].contents, pproc->define_tabe.buf[table_index].clen);
+	goto end;
+  }
+  table_index = check_if_macro(pproc, call_name);
+  if(table_index != -1){
+	handle_macro(pproc, table_index);
+  }else{
+	pre_proc_failure(pproc, call_name, "Invaild Preprocessor invocation inside of a macro. Directives are not allowed within macros");
+  }
+ end:
+  pproc->current_chunk.start = &current_macro->body.buf[current_macro->body.cap];
+  pproc->current_chunk.size = 0;
+ }
+// TODO fix labels in macros
+void handle_macro(pprocessor_t *pproc,size_t table_index)
+{
+  if(pproc->input[pproc->current_pos - 1] != '('){
+	pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Arguments must be placed within Parenethes when invoking a macro");
+  }
+  macro_t invoked_macro = pproc->macro_table.buf[table_index];
+  charslice paren_args = pull_macro_args(pproc);
+  charslice_slice split_macro_args = extract_macro_args(paren_args);
+  if(split_macro_args.len > invoked_macro.arg_no)
+	pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Too many Arguments supplied to macro");
+  pproc->current_chunk.size = 0;
+  pproc->current_chunk.start = invoked_macro.body.buf;
+  char ch = 1;
+  for(;ch != 0;){
+	ch = pull_macro_char(&invoked_macro);
+	if(ch == '!'){
+	  write_current_chunk(pproc);
+	  handle_invocation_in_macro(pproc, &invoked_macro);
+	}
+	if(ch == '%'){
+	  write_current_chunk(pproc);
+	  charslice arg_no = macro_pull_space_delim_str(&invoked_macro);
+	  int arg_index = decstr_to_int(arg_no);
+	  if(arg_index >= invoked_macro.arg_no){
+		pre_proc_failure(pproc, arg_no, "Arg number greater than macro's specified arg count");
+	  }
+	  append_char_slice(&pproc->output, split_macro_args.buf[arg_index].buf, split_macro_args.buf[arg_index].len);
+	  pproc->current_chunk.size = 0;
+	  pproc->current_chunk.start = &invoked_macro.body.buf[invoked_macro.body.cap];
+	}else{
+	  pproc->current_chunk.size++;
+	}
+  }
+}
+ 
 void handle_invocation(pprocessor_t *pproc)
 {
   char check_if_comment = peek_token(pproc);
@@ -237,6 +467,9 @@ void handle_invocation(pprocessor_t *pproc)
 	case DEFINE_IND:
 	  build_define(pproc);
 	  break;
+	case DEFMAC_IND:
+	  build_macro(pproc);
+	  break;
 	default:
 	  pre_proc_failure(pproc,call_name,"Unknown pre-processor directive");
 	}
@@ -244,9 +477,14 @@ void handle_invocation(pprocessor_t *pproc)
 	table_index = check_if_define(pproc, call_name);
 	if(table_index != -1){
 	  append_char_slice(&pproc->output, pproc->define_tabe.buf[table_index].contents, pproc->define_tabe.buf[table_index].clen);
-	}else{
-	  pre_proc_failure(pproc,call_name,"Unknown pre-processor directive or macro");
+	  goto end;
 	}
+	table_index = check_if_macro(pproc, call_name);
+	if(table_index != -1)
+	  handle_macro(pproc, table_index);
+	else
+	  pre_proc_failure(pproc,call_name,"Unknown pre-processor directive or macro");
+	
   }
  end: 
   pproc->current_chunk.start = &pproc->input[pproc->current_pos];
