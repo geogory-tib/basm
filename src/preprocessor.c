@@ -246,28 +246,30 @@ charslice macro_pull_space_delim_str(macro_t *macro)
   charslice ret = {0};
   ret.buf = &macro->body.buf[macro->body.cap];
   ret.cap = 0;
-  for(char ch = pull_macro_char(macro);!iscntrl(ch) && !isspace(ch) && ch != ')'; ch = pull_macro_char(macro)){
+  for(char ch = pull_macro_char(macro);!iscntrl(ch) && !isspace(ch) && ch != '('; ch = pull_macro_char(macro)){
 	ret.len++;
   }
   return ret;
 }
 
-charslice pull_maco_name(pprocessor_t *pproc)
-{
-  charslice ret = {0};
-  ret.buf = &pproc->input[pproc->current_pos];
-  ret.cap = 0;
-  for(char ch  = pull_token(pproc);ch != '(';ch = pull_token(pproc)){
-	ret.len++;
-  }
-  return ret;
-}
 charslice pull_macro_args(pprocessor_t *pproc)
 {
   charslice ret = {0};
   ret.buf = &pproc->input[pproc->current_pos];
   ret.cap = 0;
   for(char ch  = pull_token(pproc);;ch = pull_token(pproc)){
+	ret.len++;
+	if(ch == ')')
+	  break;
+  }
+  return ret;
+}
+charslice macro_pull_macro_args(macro_t *macro)
+{
+  charslice ret = {0};
+  ret.buf = &macro->body.buf[macro->body.cap];
+  ret.cap = 0;
+  for(char ch  = pull_macro_char(macro);;ch = pull_macro_char(macro)){
 	ret.len++;
 	if(ch == ')')
 	  break;
@@ -382,7 +384,7 @@ charslice_slice extract_macro_args(charslice paren_args)
   return ret;
 }
 //invocations within macros have to be handled seprately
- void handle_macro(pprocessor_t *pproc,size_t table_index);
+void handle_macro(pprocessor_t *pproc,macro_t invoked_macro,charslice_slice args);
  void handle_invocation_in_macro(pprocessor_t *pproc,macro_t *current_macro)
  {
   char check_if_comment = peek_macro_char(current_macro);
@@ -402,7 +404,16 @@ charslice_slice extract_macro_args(charslice paren_args)
   }
   table_index = check_if_macro(pproc, call_name);
   if(table_index != -1){
-	handle_macro(pproc, table_index);
+	macro_t invoked_macro = pproc->macro_table.buf[table_index];
+	if(current_macro->body.buf[current_macro->body.cap - 1] != '('){
+	  pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Arguments must be placed within Parenethes when invoking a macro");
+	}
+	charslice paren_args = macro_pull_macro_args(current_macro);
+	charslice_slice split_macro_args = extract_macro_args(paren_args);
+	if(split_macro_args.len > invoked_macro.arg_no)
+	  pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Too many Arguments supplied to macro");
+	handle_macro(pproc,invoked_macro,split_macro_args);
+	goto end;
   }else{
 	pre_proc_failure(pproc, call_name, "Invaild Preprocessor invocation inside of a macro. Directives are not allowed within macros");
   }
@@ -411,16 +422,9 @@ charslice_slice extract_macro_args(charslice paren_args)
   pproc->current_chunk.size = 0;
  }
 // TODO fix labels in macros
-void handle_macro(pprocessor_t *pproc,size_t table_index)
+void handle_macro(pprocessor_t *pproc,macro_t invoked_macro,charslice_slice args)
 {
-  if(pproc->input[pproc->current_pos - 1] != '('){
-	pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Arguments must be placed within Parenethes when invoking a macro");
-  }
-  macro_t invoked_macro = pproc->macro_table.buf[table_index];
-  charslice paren_args = pull_macro_args(pproc);
-  charslice_slice split_macro_args = extract_macro_args(paren_args);
-  if(split_macro_args.len > invoked_macro.arg_no)
-	pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Too many Arguments supplied to macro");
+  append_char_slice(&pproc->output, "\n", 1);
   pproc->current_chunk.size = 0;
   pproc->current_chunk.start = invoked_macro.body.buf;
   char ch = 1;
@@ -429,15 +433,15 @@ void handle_macro(pprocessor_t *pproc,size_t table_index)
 	if(ch == '!'){
 	  write_current_chunk(pproc);
 	  handle_invocation_in_macro(pproc, &invoked_macro);
-	}
-	if(ch == '%'){
+	}else if(ch == '%'){
 	  write_current_chunk(pproc);
 	  charslice arg_no = macro_pull_space_delim_str(&invoked_macro);
 	  int arg_index = decstr_to_int(arg_no);
 	  if(arg_index >= invoked_macro.arg_no){
 		pre_proc_failure(pproc, arg_no, "Arg number greater than macro's specified arg count");
 	  }
-	  append_char_slice(&pproc->output, split_macro_args.buf[arg_index].buf, split_macro_args.buf[arg_index].len);
+	  append_char_slice(&pproc->output, args.buf[arg_index].buf, args.buf[arg_index].len);
+	  append_char_slice(&pproc->output, "\n",1);
 	  pproc->current_chunk.size = 0;
 	  pproc->current_chunk.start = &invoked_macro.body.buf[invoked_macro.body.cap];
 	}else{
@@ -480,9 +484,17 @@ void handle_invocation(pprocessor_t *pproc)
 	  goto end;
 	}
 	table_index = check_if_macro(pproc, call_name);
-	if(table_index != -1)
-	  handle_macro(pproc, table_index);
-	else
+	if(table_index != -1){
+	  macro_t invoked_macro = pproc->macro_table.buf[table_index];
+	  if(pproc->input[pproc->current_pos - 1] != '('){
+		pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Arguments must be placed within Parenethes when invoking a macro");
+	  }
+	  charslice paren_args = pull_macro_args(pproc);
+	  charslice_slice split_macro_args = extract_macro_args(paren_args);
+	  if(split_macro_args.len > invoked_macro.arg_no)
+		pre_proc_failure(pproc, pproc->macro_table.buf[table_index].name, "Too many Arguments supplied to macro");
+	  handle_macro(pproc,invoked_macro,split_macro_args);
+	}else
 	  pre_proc_failure(pproc,call_name,"Unknown pre-processor directive or macro");
 	
   }
