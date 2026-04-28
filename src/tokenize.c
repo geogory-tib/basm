@@ -127,7 +127,7 @@ static inline void pull_str(lexer_t *lexer,token_t * tok)
   tok->raw = str;
 }
 
-int check_if_valid_hex(char ch)
+static int check_if_valid_hex(char ch)
 {
   if(isalpha(ch)){
 	if(islower(ch))

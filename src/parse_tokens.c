@@ -230,6 +230,7 @@ token_t peek_token(parser_t parser)
 	return (token_t){0x0,0,TOK_EOF,0x0,0,0};
   return parser.input.buf[parser.current_pos + 1];
 }
+
 int check_if_valid_instruction(token_t tok)
 {
   if(tok.str_len != strlen(ins_table[0].name))
