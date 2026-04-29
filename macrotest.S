@@ -1,5 +1,0 @@
-
-label1
-	lda #1
-	lda $FF
-	jmp &

@@ -116,9 +116,37 @@ static int append_define_slice(define_slice *slice,define_t define)
 }
 
 typedef struct{
+  char *name;
+  size_t nlen;
+  size_t arg_no;
+  token_slice tokens;
+}macro_t;
+
+typedef struct{
+  macro_t *buf;
+  size_t len;
+  size_t cap;
+}macro_slice;
+
+static int append_macro_slice(macro_slice *slice,macro_t macro)
+{
+  if (slice->len == slice->cap){
+	void *tmp = realloc(slice->buf,(sizeof(macro_t) * ((slice->cap + 1) * 2)));
+	if(!tmp)
+	  return -1;
+    slice->buf = tmp;
+	slice->cap = (slice->cap + 1) * 2;
+  }
+  slice->buf[slice->len] = macro;
+  slice->len++;
+  return 0;
+}
+
+typedef struct{
   token_slice toks;
   char_slice output;
   define_slice d_table;
+  macro_slice m_table;
   char *current_file;
   char *input;
   size_t len;
@@ -461,6 +489,18 @@ static int check_if_define(preproc_t *pproc,token_t tok){
   }
   return -1;
 }
+
+static int check_if_macro(preproc_t *pproc,token_t tok){
+  int i;
+  for(i = 0; i < pproc->m_table.len;i++){
+	if(tok.str_len != pproc->m_table.buf[i].nlen)
+	  continue;
+	if(!strncmp(tok.raw,pproc->m_table.buf[i].name,tok.str_len)){
+	  return i;
+	}
+  }
+  return -1;
+}
 static void write_token(preproc_t *pproc,token_t tok)
 {
   switch(tok.type){
@@ -505,11 +545,40 @@ static void write_token(preproc_t *pproc,token_t tok)
 	PANIC("INVALD STATE");
   }
 }
+static void handle_tokens(preproc_t *pproc);
+void handle_include(preproc_t *pproc)
+{
+  token_t tok = pull_token(pproc);
+  if(tok.type != QOUTE){
+	EXIT_AND_FAIL("Expected qouted filename after include directive",tok);
+  }
+  char_slice file_name = {0};
+  for(tok = pull_token(pproc);tok.type != QOUTE;tok = pull_token(pproc)){
+	append_char_slice(&file_name, tok.raw, tok.str_len);
+  }
+  append_char_slice(&file_name, "\0", sizeof(char));
+  preproc_t old_state = *pproc;
+  preproc_t new_state = {0};
+  size_t new_size = 0;
+  char *new_file_contents = read_file(file_name.buf, &new_size);
+  new_state.current_file = file_name.buf;
+  new_state.input = new_file_contents;
+  new_state.len = new_size;
+  new_state.d_table = old_state.d_table;
+  new_state.m_table = old_state.m_table;
+  new_state.output = old_state.output;
+  lex_preproc_tokens(&new_state);
+  new_state.current_pos = 0;
+  handle_tokens(&new_state);
+  pproc->output = new_state.output;
+  pproc->d_table = new_state.d_table;
+  pproc->m_table = new_state.m_table;
+}
 static void handle_invo(preproc_t *pproc,token_t tok)
 {
   switch(tok.value){
   case COMMENT:
-	
+	break;
   case DEFINE_IND:
 	{
 	  define_t new_def ={0};
@@ -520,13 +589,43 @@ static void handle_invo(preproc_t *pproc,token_t tok)
 	  append_define_slice(&pproc->d_table, new_def);
 	  break;
 	}
+  case INCLUDE_IND:
+	{
+	  handle_include(pproc);
+	  break;
+	}
+  case DEFMAC_IND:
+	{
+	  macro_t new_macro = {0};
+	  token_t m_name = pull_token(pproc);
+	  if(m_name.type != IDENT){
+		EXIT_AND_FAIL("Macro definition lacks a valid name", m_name);
+	  }
+	  new_macro.name = m_name.raw;
+	  new_macro.nlen  = m_name.str_len;
+	  token_t arg_no = pull_token(pproc);
+	  if(arg_no.type != DEC_NUMBER || arg_no.type != NEW_LINE){
+		EXIT_AND_FAIL("Invaild token after Macro name", m_name);
+	  }
+	  new_macro.arg_no = arg_no.value;
+	  for(token_t mtoken = pull_token(pproc); mtoken.type != PREPOC_INVOKE && mtoken.value != ENDMAC_IND;mtoken = pull_token(pproc)){
+		append_slice(&new_macro.tokens, mtoken);
+	  }
+	  break;
+	}
   case NOT_DIR:
 	{
 	  int table_index = check_if_define(pproc, tok);
 	  if(table_index != -1){
 		token_t define_token = pproc->d_table.buf[table_index].token;
 		write_token(pproc, define_token);
-	  }else{
+		break;
+	  }
+	  table_index = check_if_macro(pproc, tok);
+	  if(table_index != -1){
+		PANIC("TODO -- IMPLEMENT MACRO EXPANSION")
+	  }
+	  else{
 		EXIT_AND_FAIL("Unknown define or macro", tok);
 	  }
 	  break;
